@@ -1185,10 +1185,10 @@ M.get_new_blob_ptr = function()
   return ffi.new('sqlite3_blob*[1]')
 end
 
-M.type_of_db_ptr = ffi.typeof("sqlite3*[1]")
-M.type_of_stmt_ptr = ffi.typeof("sqlite3_stmt*[1]")
+M.type_of_db_ptr = ffi.typeof("sqlite3*")
+M.type_of_stmt_ptr = ffi.typeof("sqlite3_stmt*")
 M.type_of_exec_ptr = ffi.typeof("int (*)(void*,int,char**,char**)")
-M.type_of_blob_ptr = ffi.typeof("sqlite3_blob*[1]")
+M.type_of_blob_ptr = ffi.typeof("sqlite3_blob*")
 
 M = setmetatable(M, {
   __index = function(_, k)
