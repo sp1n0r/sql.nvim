@@ -1,0 +1,257 @@
+================================================================================
+sql:__last_errcode()                                    *sql:__last_errcode()*
+        Get last error code
+
+        Return: ~
+            number: sqlite error number
+
+sql:__parse({statement})                                       *sql:__parse()*
+        wrapper around stmt module for convenience.
+
+        Parameters: ~
+            {statement} (string)  statement to be parsed.
+
+        Return: ~
+            table: stmt object
+
+sql:add()                                                          *sql:add()*
+        Equivalent to |sql:insert|
+
+
+sql:delete()                                                    *sql:delete()*
+        same as insert but, mutates the sql_table with the new changes
+
+        Varargs: ~
+            if {[1]} == table/content else table_name as {args[1]} and table
+            with where to delete as {args[2]}.
+        Return: ~
+            boolean: true incase the table was inserted successfully.
+        Usage: ~
+            db:delete("todos")
+            db:delete("todos", { where = { id = 1 })
+            db:delete{ todos = { where = { id = 1 } }}
+
+sql:eval({params})                                                *sql:eval()*
+        Evaluate {statement} and returns true if successful else errorout.
+        Optionally it accept {params} which can be a dict of values
+        corresponding to the sql statement or a list of unamed values.
+
+        Parameters: ~
+            {params} (table)  params to be bind to {statement}, it can be a list or dict
+
+        Return: ~
+            boolean: if the evaluation is successful then return true.
+        Usage: ~
+            db:eval("drop table if exists todos")
+            db:eval("select * from todos where id = ?", 1)
+            db:eval("insert into todos(title, deadline) values(:title,
+            :deadline)", {title = "1", deadline = 2021})
+
+sql:exists()                                                    *sql:exists()*
+        Check if a table with {name} exists in sqlite db
+
+
+sql:find()                                                        *sql:find()*
+        Equivalent to |sql:insert|
+
+
+sql:get()                                                          *sql:get()*
+        Equivalent to |sql:insert|
+
+
+sql:insert()                                                    *sql:insert()*
+        Insert to lua table into sqlite database table. +supports inserting
+        multiple rows.
+
+        Varargs: ~
+            if {[1]} == table/content else table_name as {args[1]} and table to
+            insert as {args[2]}.
+        Return: ~
+            boolean: true incase the table was inserted successfully.
+        Usage: ~
+            db:insert("todos", { title = "new todo" })
+            db:insert{ todos = { title = "new todo"} }
+
+sql:isclose()                                                  *sql:isclose()*
+        predict returning true if db connection is deactivated.
+
+        Return: ~
+            boolean: true if db is close, otherwise false.
+
+sql:isopen()                                                    *sql:isopen()*
+        predict returning true if db connection is active.
+
+        Return: ~
+            boolean: true if db is opened, otherwise false.
+
+sql:select()                                                    *sql:select()*
+        Query from a table with where and join options
+
+        Usage: ~
+            db:get("todos") -- everything
+            db:get("todos", { where = { id = 1 })
+            db:get{ todos = { where = { id = 1 } }}
+
+sql:status()                                                    *sql:status()*
+        Returns current connection status Get last error code
+
+
+sql:update()                                                    *sql:update()*
+        Update table row under certine
+
+        Varargs: ~
+            if {[1]} == table/content else table_name as {args[1]} and table to
+            insert as {args[2]}.
+        Return: ~
+            boolean: true incase the table was inserted successfully.
+        Usage: ~
+            db:update("todos", { where = { id = "1" }, values = { action =
+            "DONE" }})
+            db:update{ "todos" = { where = { deadline = "2021" }, values = {
+            status = "overdue" }}}
+
+
+================================================================================
+                                                                      *stmt.lua*
+
+stmt.lua is a collection of methods to deal with sqlite statements.
+
+stmt:bind()                                                      *stmt:bind()*
+        Bind {args[2]} at {args[1]} or kv pairs {args[1]}. If {args[1]} is a
+        number and {args[2]} is a value then it binds by index. Else first
+        argument is a table, then it binds the table to indicies, and it works
+        with named and unnamed.
+
+        Varargs: ~
+            if {args[1]} number and {args[2]} or {args[1]} table
+        See: ~
+            |stmt:nparam()|
+            |stmt:param()|
+            |stmt:bind()|
+
+stmt:bind_blob({pointer}, {idx}, {size})                    *stmt:bind_blob()*
+        Binds a blob at {idx} with {size}
+
+        Parameters: ~
+            {pointer} (sqlite3_blob)  blob to bind
+            {idx} (number)  index starting at 1
+            {size} (number)  pointer size
+
+        Return: ~
+            sqlite_flag
+
+stmt:bind_clear()                                          *stmt:bind_clear()*
+        Clear the current bindings.
+
+        Return: ~
+            sqlite_flag
+
+stmt:bind_next({value})                                     *stmt:bind_next()*
+        Bind the value at the next index until all values are bound
+
+        Parameters: ~
+            {value} (any)  value to bind
+
+        Return: ~
+            sqlite_flag
+
+stmt:bind_zeroblob({idx}, {size})                       *stmt:bind_zeroblob()*
+        Binds zeroblob at {idx} with {size}
+
+        Parameters: ~
+            {idx} (number)  index starting at 1
+            {size} (number)  zeroblob size
+
+        Return: ~
+            sqlite_flag
+
+stmt:each({callback})                                            *stmt:each()*
+        Loops through results with {callback} until there is no row left.
+
+        Parameters: ~
+            {callback} (function)  a function to be called on each number of row.
+
+        Usage: ~
+            stmt:each(function(s)  print(s:val(1))  end)
+        See: ~
+            |stmt:step()|
+
+stmt:expand()                                                  *stmt:expand()*
+        Expand the resulting statement after binding, used for debugging
+        purpose.
+
+        Return: ~
+            string: the resulting statement that can be finalized.
+
+stmt:iter()                                                      *stmt:iter()*
+        stmt:iter
+
+        See: ~
+            |stmt:next()|
+
+stmt:kt()                                                          *stmt:kt()*
+        Key/type pair in current result.
+
+        Return: ~
+            table: key/type pair of a row.
+        See: ~
+            |stmt:key()|
+            |stmt:val()|
+            |stmt:nkeys()|
+
+stmt:kvrows({callback})                                        *stmt:kvrows()*
+        Loops through the results and if {callback} pass to it row, else return
+        nested kv pairs.
+
+        Parameters: ~
+            {callback} (function)  a function to be called with each row.
+
+        Return: ~
+            table: if no callback then nested key-value pairs
+        See: ~
+            |stmt:kv()|
+            |stmt:each()|
+
+stmt:next()                                                      *stmt:next()*
+        stmt:next: If code == flags.row it returns If code == flags.done it
+        reset the parsed statement
+
+
+stmt:nparam()                                                  *stmt:nparam()*
+        The number of parameter to bind.
+
+        Return: ~
+            number: number of params in {stmt.pstmt}
+
+stmt:param({idx})                                               *stmt:param()*
+        The parameter key/name at {idx}
+
+        Parameters: ~
+            {idx} (number)  index starting at 1
+
+        Return: ~
+            string: param key ":key" at {idx}
+
+stmt:params()                                                  *stmt:params()*
+        Parameters keys/names
+
+        Return: ~
+            table: paramters key/names in {stmt.pstmt}
+        See: ~
+            |stmt:nparam()|
+            |stmt:param()|
+
+stmt:vrows({callback})                                          *stmt:vrows()*
+        Like stmt:kvrows but passed list of values instead of kv pairs.
+
+        Parameters: ~
+            {callback} (function)  a function to be called with each row.
+
+        Return: ~
+            table: if no callback then nested lists of values in each row.
+        See: ~
+            |stmt:vals()|
+            |stmt:each()|
+
+
+ vim:tw=78:ts=8:ft=help:norl:
