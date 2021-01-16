@@ -1,6 +1,7 @@
 local clib = require'sql.defs'
 local stmt = require'sql.stmt'
 local u = require'sql.utils'
+local t = require'sql.table'
 local P = require'sql.parser'
 local flags = clib.flags
 local sql = {}
@@ -8,8 +9,8 @@ sql.__index = sql
 
 function sql:__assert_tbl(tbl, method)
   assert(self:exists(tbl),
-  string.format("sql.nvim: %s table doesn't exists. %s failed.",
-  tbl, method
+  string.format("sql.nvim: can not execute %s, %s doesn't exists.",
+  method, tbl
   ))
 end
 
@@ -230,13 +231,13 @@ function sql:exists(name)
   return type(q) == "table" and true or false
 end
 
---- get sql table {name} schema.
+--- get sql table {name} schema, if table doesn't exist then return empty table.
 ---@param tbl string: the table name
 ---@param onlykeys boolean: whether to return a table of keys and their types. default false.
 ---@return table: list of keys or keys and their type.
 function sql:schema(tbl, onlykeys)
   local tbl_sch = self:eval(string.format("pragma table_info(%s)",  tbl))
-  if type(tbl_sch) == "boolean" then return end
+  if type(tbl_sch) == "boolean" then return {} end
   if onlykeys then
     local keys = {}
     for _, v in ipairs(tbl_sch) do
@@ -365,6 +366,7 @@ function sql:select(tbl, spec)
   end
 
   self:__wrap_stmts(function()
+    if spec.keys then spec.select = spec.keys end
     local s = self:__parse(P.select(tbl, {
       select = spec and spec.select or nil,
       where = spec and spec.where or nil,
@@ -376,6 +378,13 @@ function sql:select(tbl, spec)
   end)
 
   return ret
+end
+
+--- Create new sql-table object.
+---@param tbl_name string: the name of the table. can be new or existing one.
+---@return table
+function sql:table(tbl_name)
+  return t:new(self, tbl_name)
 end
 
 return sql
